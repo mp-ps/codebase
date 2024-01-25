@@ -1,0 +1,22 @@
+import PyPDF2
+
+# Open the PDF file
+pdf_file = open('/Users/rissingh0/Documents/developer/AI/Scripts/pdf-data/Rosetta Genomics Ltd. (ROSGQ) Analyst Ratings, Estimates & Forecasts - Yahoo Finance.pdf', 'rb')
+
+# Create a PDF reader object
+pdf_reader = PyPDF2.PdfReader(pdf_file)
+
+text = ''
+
+# Loop through each page and extract text
+for page_num in range(len(pdf_reader.pages)):
+    page = pdf_reader.pages[page_num]
+    text += page.extract_text()
+
+# Close the PDF file
+pdf_file.close()
+
+# Print or save the extracted text
+print(text)
+with open("ROSGQ-Forecast.txt", "w") as text_file:
+    text_file.write(text)

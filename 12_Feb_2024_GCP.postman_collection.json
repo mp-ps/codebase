@@ -1,0 +1,385 @@
+{
+	"info": {
+		"_postman_id": "db06417f-5054-44fc-ba6b-b9eb90588c72",
+		"name": "GCP",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "List All PPT",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://34.90.159.248/api/docs/list",
+					"protocol": "http",
+					"host": [
+						"34",
+						"90",
+						"159",
+						"248"
+					],
+					"path": [
+						"api",
+						"docs",
+						"list"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "01- Vector Search Query",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// var query = {};",
+							"// pm.request.url.query.all().forEach((param) => { query[param.key] = param.value});",
+							"",
+							"// pm.globals.set(\"user_query_seached\", query[\"user_query\"])",
+							"",
+							"var jsonData = pm.response.json()",
+							"    chunks_count =jsonData.result.length",
+							"    var text=\"\"",
+							"    console.log(\"total chunks are recieved: \"+jsonData.result.length)",
+							"    pm.globals.set(\"chunks_count\", jsonData.result.length);",
+							"    for (var i = 0; i < jsonData.result.length; i++)",
+							"    {",
+							"    var metadata = jsonData.result[i][\"metadata\"];",
+							"    ",
+							"    current_meta_text = metadata[\"text\"]",
+							"    console.log(\"metda data: \"+current_meta_text)",
+							"    console.log(\"\\n\")",
+							"    current_meta_text = current_meta_text.replace(\"\\\"\", \"\");",
+							"    current_meta_text = current_meta_text.replace(\"p\\\"\", \"p\");",
+							"",
+							"    // console.log(\"Replaced data: \"+current_meta_text)",
+							"    console.log(\"\\n\")",
+							"",
+							"    text +=current_meta_text",
+							"    // console.log(\"After add added \\n \"+metadata[\"text\"])",
+							"    }",
+							"var len_chunk = text.length",
+							"console.info(\"lenth \"+ len_chunk)",
+							"var template = `",
+							"    <table bgcolor=\"#FFFFFF\">",
+							"        <tr>",
+							"            <th>Total Chunks Chars</th>",
+							"           ",
+							"        </tr>",
+							"       ",
+							"            <tr>",
+							"                <td>{{chunks_count}}</td>",
+							"              ",
+							"            </tr>",
+							"       ",
+							"    </table>",
+							"`;",
+							"",
+							"// Set visualizer",
+							"pm.visualizer.set(template, {",
+							"    // Pass the response body parsed as JSON as `data`",
+							"    chunks_count:chunks_count",
+							"});",
+							"",
+							"    pm.globals.set(\"chunk_text\", text);",
+							"    // console.log(text)"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"user_query = ",
+							"",
+							"\"provide prompt to fetch Industry drivers key points in general insurance industry sector\"",
+							"",
+							"",
+							"",
+							"pm.globals.set(\"user_query\", user_query)"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer ya29.a0AfB_byAZakC8XC94epPsq4dMIzCg0rs8uVm_S-lz8edcrX4TSkxKZfEWbI43S680uNMSBZ33bI-98YK7iZaddni9_RrZ2WHpkGOgg3-vrXNlXwN3y4hxMvZ2OHtvseOsEWKK0BsXnDABI1iSKVapLQy_-j_wh0-bAefQpjs7FxQ0aCgYKAfsSARISFQHGX2MixkK4YUk9B3WR_963dHEgWg0179",
+						"disabled": true
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json; charset=utf-8",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "{{query_search_address}}/api/search?user_query= Brief an overview of competitive forces in UK General Insurance industry you must summaries properties like market_concentration,  for this property your content must be generated with in given range as 300 to 400 words, entry_barriers, substitutes,buyer_and_supplier_power, created content must be eligible for self explain if we want to use that in presentation for any client.  &version=v2",
+					"host": [
+						"{{query_search_address}}"
+					],
+					"path": [
+						"api",
+						"search"
+					],
+					"query": [
+						{
+							"key": "user_query",
+							"value": " Brief an overview of competitive forces in UK General Insurance industry you must summaries properties like market_concentration,  for this property your content must be generated with in given range as 300 to 400 words, entry_barriers, substitutes,buyer_and_supplier_power, created content must be eligible for self explain if we want to use that in presentation for any client.  "
+						},
+						{
+							"key": "version",
+							"value": "v2"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GCP LLM API",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"company\": \"SAGA\",\r\n    \"data_chunks\": [\r\n        {\r\n            \"metadata\": \"{{chunk_text}}}}\"\r\n        }\r\n    ],\r\n    \"prompt\": [\r\n        \"Please provide main factors influencing pre-tax profit also called PBT of bradely fold garden centre ltd,one main factor each from the latest audited financial year and one from the previous audited financial year history available. There can be various factors influencing the growth or degrowth, for example changes raw material prices, increased automation, movement to high margin products etc impacting revenue margins, operating expenses or tax rates etc. I want data for past 3 years. Please identify the valid factors for the bradely fold garden centre ltd.Please ENSURE to summarise profit-and-loss-summary within 15 words.Present the information in following structured JSON object. output must be in following format{'profit-and-loss-summary': 'short summary within 50 words as string'}\"\r\n    ]\r\n\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{llm_handler_http_address}}/api/v2/llm",
+					"host": [
+						"{{llm_handler_http_address}}"
+					],
+					"path": [
+						"api",
+						"v2",
+						"llm"
+					],
+					"query": [
+						{
+							"key": "user_query",
+							"value": "\"Hey this is my quertion\"",
+							"disabled": true
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Query_Hander_Api",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://34.91.190.71/api/documents?template_id=rcma_demo_template&type=both&from_cache=false&sector_name=General Insurance&company_name=BHSF LIMITED",
+					"protocol": "http",
+					"host": [
+						"34",
+						"91",
+						"190",
+						"71"
+					],
+					"path": [
+						"api",
+						"documents"
+					],
+					"query": [
+						{
+							"key": "template_id",
+							"value": "rcma_demo_template"
+						},
+						{
+							"key": "type",
+							"value": "both"
+						},
+						{
+							"key": "from_cache",
+							"value": "false"
+						},
+						{
+							"key": "sector_name",
+							"value": "General Insurance"
+						},
+						{
+							"key": "company_name",
+							"value": "SAGA GROUP LIMITED",
+							"disabled": true
+						},
+						{
+							"key": "company_name",
+							"value": "BHSF LIMITED"
+						},
+						{
+							"key": "sector_name",
+							"value": "Garden Centres Pet Shop",
+							"disabled": true
+						},
+						{
+							"key": "company_name",
+							"value": "BRADELY FOLD GARDEN CENTRE LTD",
+							"disabled": true
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete files",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "http://34.90.159.248/api/doc/delete?company_name=all",
+					"protocol": "http",
+					"host": [
+						"34",
+						"90",
+						"159",
+						"248"
+					],
+					"path": [
+						"api",
+						"doc",
+						"delete"
+					],
+					"query": [
+						{
+							"key": "company_name",
+							"value": "all"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Companies",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://34.90.159.248:80/api/search_companies?user_query=SAGA",
+					"protocol": "http",
+					"host": [
+						"34",
+						"90",
+						"159",
+						"248"
+					],
+					"port": "80",
+					"path": [
+						"api",
+						"search_companies"
+					],
+					"query": [
+						{
+							"key": "user_query",
+							"value": "SAGA"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Data-Ingestion",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://34.90.194.93/api/ingestions/execute?db_version=v2",
+					"protocol": "http",
+					"host": [
+						"34",
+						"90",
+						"194",
+						"93"
+					],
+					"path": [
+						"api",
+						"ingestions",
+						"execute"
+					],
+					"query": [
+						{
+							"key": "db_version",
+							"value": "v2"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GCP LLM API",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"company\": \"BHSF\",\r\n    \"data_chunks\": [\r\n        {\r\n            \"metadata\": \"{{chunk_text}}}}\"\r\n        }\r\n    ],\r\n    \"prompt\": [\r\n           \" Brief an overview of competitive forces in UK General Insurance industry you must summaries properties like market_concentration,  for this property your content must be generated with in given range as 300 to 400 words, entry_barriers, substitutes,buyer_and_supplier_power, created content must be eligible for self explain if we want to use that in presentation for any client.  Strictly follow that the presentation the content in following structured JSON object where each property match in provided json output. Strictly output must be in following format and values for properties in json object must be in string format only   {'sector': 'sector_name ', 'key_drivers': [{'market_concentration': 'brief here market concentration'}, {'entry_barriers': ' string'}, {'substitutes': 'string'}, {'buyer_and_supplier_power': 'string'}]}\"\r\n    ]\r\n    \r\n\r\n    }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://35.204.158.17/api/v2/llm",
+					"protocol": "http",
+					"host": [
+						"35",
+						"204",
+						"158",
+						"17"
+					],
+					"path": [
+						"api",
+						"v2",
+						"llm"
+					],
+					"query": [
+						{
+							"key": "user_query",
+							"value": "\"Hey this is my quertion\"",
+							"disabled": true
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Test-Direct-Text-Embd-APi",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": ""
+				}
+			},
+			"response": []
+		}
+	]
+}

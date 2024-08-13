@@ -44,3 +44,11 @@ PCollection<TableRow> enrichedTable2 = table2.apply("Enrich Table 2",
         }
     }
 
+
+ // Print the modified PCollection
+        modifiedRows.apply("Print Output", ParDo.of(new DoFn<TableRow, Void>() {
+            @ProcessElement
+            public void processElement(@DoFn.Element TableRow row) throws IOException {
+                System.out.println(row.toPrettyString());
+            }
+        }));

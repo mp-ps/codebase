@@ -72,3 +72,5 @@ public class FormatTableRowFn extends DoFn<TableRow, KV<Void, String>> {
         c.output(KV.of(null, String.format("(%s,%s, %s)", value1, value2, value3)));
     }
 }
+// Apply the ParDo in the pipeline
+PCollection<KV<Void, String>> valueStrings = sourceData.apply(ParDo.of(new FormatTableRowFn()));

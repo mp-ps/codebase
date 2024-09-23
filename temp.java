@@ -77,6 +77,9 @@ PCollection<KV<Void, String>> valueStrings = sourceData.apply(ParDo.of(new Forma
 
 
 
+
+// Write to Cloud SQL
+sqlQueries.apply("WriteToCloudSQL", ParDo.of(new WriteToCloudSQLFn()));
 // DoFn for writing to Cloud SQL using HikariCP
     public static class WriteToCloudSQLFn extends DoFn<String, Void> {
 

@@ -74,3 +74,39 @@ public class FormatTableRowFn extends DoFn<TableRow, KV<Void, String>> {
 }
 // Apply the ParDo in the pipeline
 PCollection<KV<Void, String>> valueStrings = sourceData.apply(ParDo.of(new FormatTableRowFn()));
+
+
+
+// DoFn for writing to Cloud SQL using HikariCP
+    public static class WriteToCloudSQLFn extends DoFn<String, Void> {
+
+        private HikariDataSource dataSource;
+
+        @Setup
+        public void setup() {
+            HikariConfig config = new HikariConfig();
+            config.setJdbcUrl("jdbc:mysql://your-cloud-sql-instance-url:3306/your_database");
+            config.setUsername("your-username");
+            config.setPassword("your-password");
+            dataSource = new HikariDataSource(config);
+        }
+
+        @ProcessElement
+        public void processElement(ProcessContext c) {
+            String sqlQuery = c.element();
+
+            try (Connection conn = dataSource.getConnection();
+                 PreparedStatement pstmt = conn.prepareStatement(sqlQuery)) {
+                pstmt.executeUpdate();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+
+        @Teardown
+        public void teardown() {
+            if (dataSource != null) {
+                dataSource.close();
+            }
+        }
+    }

@@ -52,3 +52,23 @@ PCollection<TableRow> enrichedTable2 = table2.apply("Enrich Table 2",
                 System.out.println(row.toPrettyString());
             }
         }));
+
+
+
+
+
+// Define the DoFn as a separate class
+public class FormatTableRowFn extends DoFn<TableRow, KV<Void, String>> {
+
+    @ProcessElement
+    public void processElement(ProcessContext c) {
+        TableRow row = c.element();
+        assert row != null;
+
+        String value1 = (row.get("relationship_manager_id") == null) ? "NULL" : "'" + row.get("relationship_manager_id").toString() + "'";
+        String value2 = (row.get("name") == null) ? "NULL" : "'" + row.get("name").toString() + "'";
+        String value3 = (row.get("team") == null) ? "NULL" : "'" + row.get("team").toString() + "'";
+
+        c.output(KV.of(null, String.format("(%s,%s, %s)", value1, value2, value3)));
+    }
+}

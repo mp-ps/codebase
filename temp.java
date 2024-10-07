@@ -113,3 +113,9 @@ sqlQueries.apply("WriteToCloudSQL", ParDo.of(new WriteToCloudSQLFn()));
             }
         }
     }
+
+
+///////////////////////////////////////
+String mccValue = Optional.ofNullable(row.get("Industry_value"))
+                              .map(value -> value.isNull() ? "NULL" : value.getStringValue())
+                              .orElse("NULL");

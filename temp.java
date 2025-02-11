@@ -119,3 +119,6 @@ sqlQueries.apply("WriteToCloudSQL", ParDo.of(new WriteToCloudSQLFn()));
 String mccValue = Optional.ofNullable(row.get("Industry_value"))
                               .map(value -> value.isNull() ? "NULL" : value.getStringValue())
                               .orElse("NULL");
+
+
+It also provides a comparative view across various Initiatives within a Lab/Platform. Moreover, there won't be any need of connecting to Atmos to access these dashboards unlike Sonar/NexusIq, and can further be shared with LBG Leads to self-serve themselves instead of sharing such details over mail or maintaining it manually on Confluence. Finally, it'll help us to achieve our engineering goals and deliver higher quality products.

@@ -122,3 +122,63 @@ String mccValue = Optional.ofNullable(row.get("Industry_value"))
 
 
 It also provides a comparative view across various Initiatives within a Lab/Platform. Moreover, there won't be any need of connecting to Atmos to access these dashboards unlike Sonar/NexusIq, and can further be shared with LBG Leads to self-serve themselves instead of sharing such details over mail or maintaining it manually on Confluence. Finally, it'll help us to achieve our engineering goals and deliver higher quality products.
+
+
+
+
+
+
+<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>
+        TEST AUTOMATION - File Upload to Bucket.
+<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<>>>
+import com.google.cloud.storage.BlobId;
+import com.google.cloud.storage.BlobInfo;
+import com.google.cloud.storage.Storage;
+import com.google.cloud.storage.StorageOptions;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+
+public class CronJobRunner {
+
+    public static void main(String[] args) {
+        try {
+            // 1. Read files from INT folder in classpath
+            List<File> files = readFilesFromClasspath("INT");
+
+            // 2. Upload files to GCS
+            uploadToGCS(files); 
+
+        } catch (IOException e) {
+            // Handle exceptions (e.g., log and notify)
+            e.printStackTrace(); 
+        }
+    }
+
+    private static List<File> readFilesFromClasspath(String folderName) throws IOException {
+        Path classpathPath = Paths.get(ClassLoader.getSystemResource("").toURI());
+        Path intFolderPath = classpathPath.resolve(folderName);
+
+        return Files.walk(intFolderPath)
+                .filter(Files::isRegularFile)
+                .map(Path::toFile)
+                .toList();
+    }
+
+    private static void uploadToGCS(List<File> files) throws IOException {
+        // Get GCS credentials and create a Storage client
+        Storage storage = StorageOptions.newBuilder().build().getService();
+
+        for (File file : files) {
+            BlobId blobId = BlobId.of("your-bucket-name", file.getName());
+            BlobInfo blobInfo = BlobInfo.newBuilder(blobId).build();
+
+            // Upload file to GCS
+            storage.create(blobInfo, Files.readAllBytes(file.toPath())); 
+        }
+    }
+}

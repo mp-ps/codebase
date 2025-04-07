@@ -182,3 +182,25 @@ public class CronJobRunner {
         }
     }
 }
+
+
+
+
+
+
+=======================================
+-- Replace 'your_dataset' with the actual name of your dataset
+DECLARE target_dataset STRING DEFAULT 'your_dataset';
+DECLARE table_prefix STRING DEFAULT 'your_table_prefix_'; -- If your tables have a common prefix
+
+INSERT INTO `${target_dataset}.your_target_table` (TableName, Value, Meta_Validation_Errors, Timestamp)
+SELECT
+    table_id AS TableName,
+    ARRAY_TO_STRING(ARRAY(SELECT CAST(t.* AS STRING) FROM `${target_dataset}.${table_id}` AS t WHERE t.Meta_Validation_Errors IS NOT NULL), ' | ') AS Value,
+    (SELECT ANY_VALUE(Meta_Validation_Errors) FROM `${target_dataset}.${table_id}` WHERE Meta_Validation_Errors IS NOT NULL) AS Meta_Validation_Errors,
+    CURRENT_TIMESTAMP() AS Timestamp
+FROM
+    `${target_dataset}.*`
+WHERE
+    STARTS_WITH(table_id, table_prefix) -- Filter by a common prefix if applicable
+    AND EXISTS(SELECT 1 FROM `${target_dataset}.${table_id}` WHERE Meta_Validation_Errors IS NOT NULL);

@@ -204,3 +204,18 @@ FROM
 WHERE
     STARTS_WITH(table_id, table_prefix) -- Filter by a common prefix if applicable
     AND EXISTS(SELECT 1 FROM `${target_dataset}.${table_id}` WHERE Meta_Validation_Errors IS NOT NULL);
+
+
+Hi Abhishek Kumar 11, 
+There's one ticket I've moved to testing yesterday evening. I've tagged you in Jira ticket and also have assigned the ticket to you. This is the one which is the last one remaining for us to go to prod. 
+So you can start testing on this. 
+I've given all the info in the comments, let me know if anything is unclear. 
+ 
+Have shared the ticket with you on Lloyds.
+ 
+Post this - We will require EOTR - Which is below stories ->
+Already tested by you ->c33,c34,c22, Ingestion Errored data in a separate stage table(Which I had tested in BLD), 
+In Testing -> 4 non-dim table fix(Which you're currently testing), 
+and the above one - 
+Yet to be tested -> Visa MSC bug fix.
+ 

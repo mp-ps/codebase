@@ -1,0 +1,66 @@
+MERGE
+  dmn01-comsoi-bld-01-8b80.dmn01_comsoi_bqd_euwe2_cardnet_edi_stage.CardnetOutletFees stg
+USING (
+  SELECT
+    raw.Internal_MID,
+    raw.Period,
+    raw.Fee_Id,
+    raw.Fee_Value,
+    dim.Rate_Fee_Category_L1 AS Fee_Category_L1,
+    dim.Rate_Fee_Category_L2 AS Fee_Category_L2,
+    dim.Fee_Category_L3      AS Fee_Category_L3
+  FROM
+    dmn01-comsoi-bld-01-8b80.dmn01_comsoi_bqd_euwe2_cardnet_edi_raw.CardnetOutletFees raw
+  LEFT JOIN
+    dmn01-comsoi-bld-01-8b80.dmn01_comsoi_bqd_euwe2_cardnet_edi_stage.Dimension_Fee_Category dim
+  ON
+    raw.Fee_Id = dim.Fee_Id
+  WHERE
+    TIMESTAMP_TRUNC(raw.Meta_Insert_Timestamp, DAY) = (
+      SELECT
+        MAX(TIMESTAMP_TRUNC(Meta_Insert_Timestamp, DAY))
+      FROM
+        dmn01-comsoi-bld-01-8b80.dmn01_comsoi_bqd_euwe2_cardnet_edi_raw.CardnetOutletFees
+      WHERE
+        Meta_Insert_Timestamp IS NOT NULL
+    )
+    AND raw.Meta_Insert_Timestamp IS NOT NULL
+    AND raw.Internal_MID IS NOT NULL
+    AND raw.Period IS NOT NULL
+    AND raw.Fee_Id IS NOT NULL
+) raw
+ON
+  stg.Internal_MID = raw.Internal_MID
+  AND stg.Fee_Id = raw.Fee_Id
+  AND stg.Period = raw.Period
+  AND DATE(stg.Insert_Timestamp) <= CURRENT_DATE()
+WHEN MATCHED THEN
+  UPDATE SET
+    stg.Fee_Value       = raw.Fee_Value,
+    stg.Fee_Category_L1 = raw.Fee_Category_L1,
+    stg.Fee_Category_L2 = raw.Fee_Category_L2,
+    stg.Fee_Category_L3 = raw.Fee_Category_L3,
+    stg.Update_Timestamp = CURRENT_TIMESTAMP()
+WHEN NOT MATCHED THEN
+  INSERT (
+    Internal_MID,
+    Period,
+    Fee_Id,
+    Fee_Value,
+    Fee_Category_L1,
+    Fee_Category_L2,
+    Fee_Category_L3,
+    Insert_Timestamp,
+    Update_Timestamp
+  )
+  VALUES (
+    raw.Internal_MID,
+    raw.Period,
+    raw.Fee_Id,
+    raw.Fee_Value,
+    raw.Fee_Category_L1,
+    raw.Fee_Category_L2,
+    raw.Fee_Category_L3,
+    CURRENT_TIMESTAMP(),
+    CURRENT_TIMESTAMP()
+  );

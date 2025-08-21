@@ -64,3 +64,21 @@ WHEN NOT MATCHED THEN
     CURRENT_TIMESTAMP(),
     CURRENT_TIMESTAMP()
   );
+
+
+
+MERGE `dmn01-comsoi-bld-01-8b80.dmn01_comsoi_bqd_euwe2_cardnet_edi_stage.CardnetOutletFees` stg
+USING (
+  SELECT Fee_Id,
+         ANY_VALUE(Rate_Fee_Category_L1) AS Rate_Fee_Category_L1,
+         ANY_VALUE(Rate_Fee_Category_L2) AS Rate_Fee_Category_L2,
+         ANY_VALUE(Fee_Category_L3)      AS Fee_Category_L3
+  FROM `dmn01-comsoi-bld-01-8b80.dmn01_comsoi_bqd_euwe2_cardnet_edi_stage.Dimension_Fee_Category`
+  GROUP BY Fee_Id
+) dim
+ON stg.Fee_Id = dim.Fee_Id
+WHEN MATCHED THEN
+  UPDATE SET
+    stg.Fee_Category_L1 = dim.Rate_Fee_Category_L1,
+    stg.Fee_Category_L2 = dim.Rate_Fee_Category_L2,
+    stg.Fee_Category_L3 = dim.Fee_Category_L3;

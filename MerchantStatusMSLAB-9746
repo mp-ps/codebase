@@ -1,0 +1,48 @@
+//With CTE approach
+WITH latest_per_merchant AS (
+  SELECT
+    a.Merchant_Internal_MID,
+    MAX(DATE(a.Last_MSC_Rate_Change_Date)) AS max_rate_change_date
+  FROM `project.dataset.CardnetAccountIdAttributes` a
+  WHERE a.Open_Closed = 'Open'                      -- Only active/open accounts
+    AND a.Last_MSC_Rate_Change_Date IS NOT NULL     -- Must have a valid change date
+    AND a.Test_Account = FALSE                      -- Exclude test accounts
+  GROUP BY a.Merchant_Internal_MID
+)
+
+-- Step 2: Merge results into CardnetMerchantStatus
+MERGE `project.dataset.CardnetMerchantStatus` T
+USING latest_per_merchant S
+ON T.Merchant_Internal_MID = S.Merchant_Internal_MID
+
+WHEN MATCHED AND (
+  T.Merch_MSC_Rate_Change_Date IS NULL              -- Populate if empty
+  OR S.max_rate_change_date > T.Merch_MSC_Rate_Change_Date  -- Overwrite if newer
+)
+THEN UPDATE SET
+  T.Merch_MSC_Rate_Change_Date = S.max_rate_change_date,
+  T.Update_Timestamp = CURRENT_TIMESTAMP();
+
+===========================================================================================
+
+// Without CTE approach MAIN
+MERGE `project.dataset.CardnetMerchantStatus` T
+USING (
+  SELECT
+    a.Merchant_Internal_MID,
+    MAX(DATE(a.Last_MSC_Rate_Change_Date)) AS max_rate_change_date
+  FROM `project.dataset.CardnetAccountIdAttributes` a
+  WHERE a.Open_Closed = 'Open'                      -- Only active/open accounts
+    AND a.Last_MSC_Rate_Change_Date IS NOT NULL     -- Must have a valid change date
+    AND a.Test_Account = FALSE                      -- Exclude test accounts
+  GROUP BY a.Merchant_Internal_MID
+) S
+ON T.Merchant_Internal_MID = S.Merchant_Internal_MID
+
+WHEN MATCHED AND (
+  T.Merch_MSC_Rate_Change_Date IS NULL
+  OR S.max_rate_change_date > T.Merch_MSC_Rate_Change_Date
+)
+THEN UPDATE SET
+  T.Merch_MSC_Rate_Change_Date = S.max_rate_change_date,
+  T.Update_Timestamp = CURRENT_TIMESTAMP();

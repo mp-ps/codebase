@@ -1,0 +1,25 @@
+MERGE `project.dataset.stage` T
+USING (
+  SELECT
+    Internal_MID,
+    Period,
+    Value
+  FROM (
+    SELECT
+      Internal_MID,
+      Period,
+      Value,
+      ROW_NUMBER() OVER (
+        PARTITION BY Internal_MID, Period
+        ORDER BY Meta_Insert_Timestamp DESC
+      ) AS rn
+    FROM `project.dataset.raw`
+  )
+  WHERE rn = 1
+) S
+ON T.Internal_MID = S.Internal_MID
+AND T.Period = S.Period
+WHEN MATCHED THEN
+  UPDATE SET T.Value = S.Value
+WHEN NOT MATCHED THEN
+  INSERT (Internal_MID, Period, Value) VALUES (S.Internal_MID, S.Period, S.Value);

@@ -1,0 +1,15 @@
+MERGE INTO `project.dataset.CardnetOutletPricingTariff` AS target
+USING (
+    SELECT
+        t.Internal_MID,
+        IF(p.External_MID IS NULL, FALSE, TRUE) AS Pricing_Tariff_Paydit
+    FROM `project.dataset.CardnetOutletPricingTariff` t
+    LEFT JOIN `project.dataset.CardnetAccountIDAttributes` a
+        ON t.Internal_MID = a.Internal_MID
+    LEFT JOIN `project.dataset.CardnetPayditMIDs` p
+        ON a.External_MID = p.External_MID
+) AS src
+ON target.Internal_MID = src.Internal_MID
+
+WHEN MATCHED THEN
+    UPDATE SET target.Pricing_Tariff_Paydit = src.Pricing_Tariff_Paydit;

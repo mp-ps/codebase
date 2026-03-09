@@ -1,3 +1,66 @@
+//--------9 march 2026 ---------//
+import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+import org.springframework.test.util.ReflectionTestUtils; // Common in enterprise Java
+import static org.mockito.Mockito.*;
+
+class CurationAppTest {
+
+    @Test
+    void testRunCardnetRatesPipelines_FullCoverage() {
+        // 1. Setup Mock Objects
+        CurationOptions mockOptions = mock(CurationOptions.class);
+        Config mockConfig = mock(Config.class);
+        String testDate = "2023-10-27";
+        String projectId = "my-bq-project";
+
+        // 2. Define Mock Behavior to satisfy the IF condition
+        when(mockOptions.getMscRatesCurationRunDate()).thenReturn(testDate);
+        when(mockOptions.getBigqueryProjectId()).thenReturn(projectId);
+
+        // 3. Mock the Static classes (BigQueryRunner and Queries)
+        try (MockedStatic<BigQueryRunner> mockedRunner = mockStatic(BigQueryRunner.class);
+             MockedStatic<Queries> mockedQueries = mockStatic(Queries.class)) {
+
+            // Mock the specific query string return
+            mockedQueries.when(() -> Queries.getCardnetMissingRatesQuery(projectId))
+                         .thenReturn("SELECT * FROM missing_rates");
+
+            // 4. Invoke the PRIVATE STATIC method via Reflection
+            // Parameters: (Target Class, Method Name, Args...)
+            ReflectionTestUtils.invokeMethod(CurationApp.class, "runCardnetRatesPipelines", 
+                                            testDate, mockOptions, mockConfig);
+
+            // 5. Verifications for 100% Coverage
+            
+            // Verify the Truncate call happened
+            mockedRunner.verify(() -> 
+                BigQueryRunner.executeBQMergeQuery(
+                    contains("TRUNCATE TABLE"), 
+                    eq(projectId), 
+                    eq("CardnetMerchantPerformance")
+                ), times(1));
+
+            // Verify the Missing Rates call happened
+            mockedRunner.verify(() -> 
+                BigQueryRunner.executeBQMergeQuery(
+                    eq("SELECT * FROM missing_rates"), 
+                    eq(projectId), 
+                    eq("CardnetMissingRates")
+                ), times(1));
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+//---------9 march 2026--------//
 // Step 3: Convert the reference table to a Map (Fee_ID -> TableRow)
         PCollectionView<Map<String, TableRow>> referenceMapView = referenceTable.apply("Convert Reference Table to Map",
                 ParDo.of(new ConvertToKV()).apply(View.asMap()));

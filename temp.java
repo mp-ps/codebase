@@ -1,39 +1,44 @@
-//--------9 march 2026 ---------//
-import org.junit.jupiter.api.Test;
+//--------9 march 2026------+/// 
+      import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
-import org.springframework.test.util.ReflectionTestUtils; // Common in enterprise Java
+import java.lang.reflect.Method;
 import static org.mockito.Mockito.*;
 
 class CurationAppTest {
 
     @Test
-    void testRunCardnetRatesPipelines_FullCoverage() {
-        // 1. Setup Mock Objects
+    void testRunCardnetRatesPipelines_FullCoverage() throws Exception {
+        // 1. Setup Mocks
         CurationOptions mockOptions = mock(CurationOptions.class);
         Config mockConfig = mock(Config.class);
-        String testDate = "2023-10-27";
-        String projectId = "my-bq-project";
+        String testDate = "2026-03-09";
+        String projectId = "test-project-123";
 
-        // 2. Define Mock Behavior to satisfy the IF condition
+        // 2. Train Mocks to enter the IF block
         when(mockOptions.getMscRatesCurationRunDate()).thenReturn(testDate);
         when(mockOptions.getBigqueryProjectId()).thenReturn(projectId);
 
-        // 3. Mock the Static classes (BigQueryRunner and Queries)
+        // 3. Mock Static Classes (BigQueryRunner & Queries)
         try (MockedStatic<BigQueryRunner> mockedRunner = mockStatic(BigQueryRunner.class);
              MockedStatic<Queries> mockedQueries = mockStatic(Queries.class)) {
 
-            // Mock the specific query string return
+            // Mock the query generator return value
             mockedQueries.when(() -> Queries.getCardnetMissingRatesQuery(projectId))
-                         .thenReturn("SELECT * FROM missing_rates");
+                         .thenReturn("SELECT * FROM missing_rates_table");
 
-            // 4. Invoke the PRIVATE STATIC method via Reflection
-            // Parameters: (Target Class, Method Name, Args...)
-            ReflectionTestUtils.invokeMethod(CurationApp.class, "runCardnetRatesPipelines", 
-                                            testDate, mockOptions, mockConfig);
+            // 4. Access the PRIVATE STATIC method using Standard Java Reflection
+            Method method = CurationApp.class.getDeclaredMethod(
+                "runCardnetRatesPipelines", 
+                String.class, CurationOptions.class, Config.class
+            );
+            method.setAccessible(true); // Allows us to call the private method
 
-            // 5. Verifications for 100% Coverage
+            // 5. Invoke the method (first arg is null because the method is static)
+            method.invoke(null, testDate, mockOptions, mockConfig);
+
+            // 6. Verifications for 100% Line Coverage
             
-            // Verify the Truncate call happened
+            // Verify the TRUNCATE query was executed
             mockedRunner.verify(() -> 
                 BigQueryRunner.executeBQMergeQuery(
                     contains("TRUNCATE TABLE"), 
@@ -41,16 +46,17 @@ class CurationAppTest {
                     eq("CardnetMerchantPerformance")
                 ), times(1));
 
-            // Verify the Missing Rates call happened
+            // Verify the Missing Rates query was executed
             mockedRunner.verify(() -> 
                 BigQueryRunner.executeBQMergeQuery(
-                    eq("SELECT * FROM missing_rates"), 
+                    eq("SELECT * FROM missing_rates_table"), 
                     eq(projectId), 
                     eq("CardnetMissingRates")
                 ), times(1));
         }
     }
 }
+  
 
 
 

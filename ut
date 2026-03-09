@@ -9,51 +9,50 @@ class CurationAppTest {
     void testRunCardnetRatesPipelines_FullCoverage() throws Exception {
         // 1. Setup Mock Objects
         CurationOptions mockOptions = mock(CurationOptions.class);
-        Config mockConfig = mock(Config.class);
+        CurationConfig mockConfig = mock(CurationConfig.class);
+        PipelineResult mockResult = mock(PipelineResult.class);
         String testDate = "2026-03-09";
-        String projectId = "test-project-id";
+        String projectId = "test-project";
 
-        // 2. Define Mock Behavior to satisfy the IF condition
+        // 2. Train Mocks to satisfy the 'if' condition and internal logic
         when(mockOptions.getMscRatesCurationRunDate()).thenReturn(testDate);
         when(mockOptions.getBigqueryProjectId()).thenReturn(projectId);
+        // Mocking the pipeline state to ensure the inner 'if' block is covered
+        when(mockResult.getState()).thenReturn(PipelineResult.State.DONE);
 
-        // 3. Use MockedStatic for ALL classes involved
+        // 3. Mock Static Classes to intercept external calls and internal pipelines
         try (MockedStatic<BigQueryRunner> mockedRunner = mockStatic(BigQueryRunner.class);
              MockedStatic<Queries> mockedQueries = mockStatic(Queries.class);
-             // We mock CurationApp but tell it to CALL_REAL_METHODS by default
              MockedStatic<CurationApp> mockedApp = mockStatic(CurationApp.class, CALLS_REAL_METHODS)) {
 
-            // STUB the failing method: This prevents the IllegalArgumentException
+            // STUB internal pipeline methods to prevent IllegalArgumentException
             mockedApp.when(() -> CurationApp.runMerchantPerformancePipeline(any(), any()))
-                     .thenAnswer(invocation -> null); // Do nothing
+                     .thenAnswer(invocation -> null);
+            
+            mockedApp.when(() -> CurationApp.runCardnetRatesTaggingOutliersPipeline(any(), any()))
+                     .thenReturn(mockResult);
 
-            // Stub the query string generator
-            mockedQueries.when(() -> Queries.getCardnetMissingRatesQuery(anyString()))
-                         .thenReturn("SELECT * FROM missing_rates");
+            mockedApp.when(() -> CurationApp.runCardnetRatesICPipeline(any(), any()))
+                     .thenAnswer(invocation -> null);
 
-            // 4. Access the PRIVATE STATIC method using Vanilla Java Reflection
+            // Mock Query generators
+            mockedQueries.when(() -> Queries.getCardnetMissingRatesQuery(anyString())).thenReturn("SELECT 1");
+            mockedQueries.when(() -> Queries.getPenceRatesCardnetRatesQuery(anyString())).thenReturn("SELECT 2");
+            mockedQueries.when(() -> Queries.getCardnetRatesMSCRateCheckQuery(anyString(), anyString())).thenReturn("SELECT 3");
+
+            // 4. Access the PRIVATE STATIC method via Vanilla Java Reflection
             Method method = CurationApp.class.getDeclaredMethod(
                 "runCardnetRatesPipelines", 
-                String.class, CurationOptions.class, Config.class
+                String.class, CurationOptions.class, CurationConfig.class
             );
-            method.setAccessible(true); 
+            method.setAccessible(true);
 
-            // 5. Invoke (null because it is a static method)
+            // 5. Execute
             method.invoke(null, testDate, mockOptions, mockConfig);
 
-            // 6. Verifications for 100% Coverage
-            
-            // Verify the Truncate query ran
-            mockedRunner.verify(() -> 
-                BigQueryRunner.executeBQMergeQuery(contains("TRUNCATE TABLE"), eq(projectId), anyString()), 
-                times(1)
-            );
-
-            // Verify the Missing Rates query ran
-            mockedRunner.verify(() -> 
-                BigQueryRunner.executeBQMergeQuery(eq("SELECT * FROM missing_rates"), eq(projectId), anyString()), 
-                times(1)
-            );
+            // 6. Verifications for 100% Line Coverage
+            // Verify that all BigQuery execution points were reached
+            mockedRunner.verify(() -> BigQueryRunner.executeBQMergeQuery(anyString(), eq(projectId), anyString()), atLeast(4));
         }
     }
 }

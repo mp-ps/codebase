@@ -1,0 +1,51 @@
+import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+import java.lang.reflect.Method;
+import static org.mockito.Mockito.*;
+
+class CurationAppTest {
+
+    @Test
+    void testRunCardnetRatesPipelines_FullCoverage() throws Exception {
+        // 1. Mock the input dependencies
+        CurationOptions mockOptions = mock(CurationOptions.class);
+        Config mockConfig = mock(Config.class);
+        String testDate = "2026-03-09";
+        String projectId = "test-project";
+
+        // 2. Setup mock returns to satisfy the 'if' condition
+        when(mockOptions.getMscRatesCurationRunDate()).thenReturn(testDate);
+        when(mockOptions.getBigqueryProjectId()).thenReturn(projectId);
+
+        // 3. Mock Static classes to prevent real BQ and Beam execution
+        try (MockedStatic<BigQueryRunner> mockedRunner = mockStatic(BigQueryRunner.class);
+             MockedStatic<Queries> mockedQueries = mockStatic(Queries.class);
+             MockedStatic<CurationApp> mockedApp = mockStatic(CurationApp.class, CALLS_REAL_METHODS)) {
+
+            // Prevent the crash: Stub the internal pipeline method to do nothing
+            mockedApp.when(() -> ReflectionTestUtils.invokeMethod(any(), eq("runMerchantPerformancePipeline"), any(), any()))
+                     .thenAnswer(invocation -> null); 
+            
+            // Alternative: If you can't use ReflectionTestUtils, simply stub the call:
+            mockedApp.when(() -> CurationApp.class.getDeclaredMethod("runMerchantPerformancePipeline", any(), any()))
+                     .thenAnswer(i -> null);
+
+            // Mock the Query string return
+            mockedQueries.when(() -> Queries.getCardnetMissingRatesQuery(anyString()))
+                         .thenReturn("SELECT 1");
+
+            // 4. Access the target method via Reflection
+            Method method = CurationApp.class.getDeclaredMethod(
+                "runCardnetRatesPipelines", 
+                String.class, CurationOptions.class, Config.class
+            );
+            method.setAccessible(true);
+
+            // 5. Execute
+            method.invoke(null, testDate, mockOptions, mockConfig);
+
+            // 6. Verify everything inside the IF block was hit
+            mockedRunner.verify(() -> BigQueryRunner.executeBQMergeQuery(anyString(), eq(projectId), anyString()), times(2));
+        }
+    }
+}
